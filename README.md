@@ -1,0 +1,1 @@
+# P594-Regression---Solar-Power-Generation-Prediction-Using-Regression-Model.-
