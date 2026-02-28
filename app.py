@@ -148,8 +148,10 @@ header {visibility: hidden;}
 # ─── Load Model & Scaler ──────────────────────────────────────────────────────
 @st.cache_resource
 def load_artifacts():
-    model = joblib.load("model.pkl")
-    scaler = joblib.load("scaler.pkl")
+    import os
+    base_path = os.path.dirname(__file__)
+    model = joblib.load(os.path.join(base_path, "model.pkl"))
+    scaler = joblib.load(os.path.join(base_path, "scaler.pkl"))
     return model, scaler
 
 try:
