@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import joblib
 import pandas as pd
+import os
 
 # ─── Page Config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -148,8 +149,7 @@ header {visibility: hidden;}
 # ─── Load Model & Scaler ──────────────────────────────────────────────────────
 @st.cache_resource
 def load_artifacts():
-    import os
-    base_path = os.path.dirname(__file__)
+    base_path = os.path.dirname(os.path.abspath(__file__))
     model = joblib.load(os.path.join(base_path, "model.pkl"))
     scaler = joblib.load(os.path.join(base_path, "scaler.pkl"))
     return model, scaler
@@ -159,7 +159,7 @@ try:
     model_loaded = True
 except Exception as e:
     model_loaded = False
-    st.error(f"⚠️ Could not load model files: {e}\n\nMake sure `model.pkl` and `scaler.pkl` are in the same folder as `app.py`.")
+    st.error(f"⚠️ Error loading model: {str(e)}")
 
 # ─── Hero ─────────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -224,10 +224,8 @@ if predict_clicked and model_loaded:
     input_scaled = scaler.transform(input_df)
     prediction = model.predict(input_scaled)[0]
 
-    # Convert to kWh equivalent for context
     kwh = prediction / 3_600_000
 
-    # Determine solar condition label
     if sky_cover == 0 and distance_to_solar_noon < 0.3:
         condition = "🌟 Ideal Solar Conditions"
         color_hint = "#ffd200"
@@ -262,26 +260,11 @@ if predict_clicked and model_loaded:
     </div>
     """, unsafe_allow_html=True)
 
-    # Show input summary
     with st.expander("📋 View Input Summary"):
-        st.dataframe(input_df.style.format({
-            'distance_to_solar_noon': '{:.3f}',
-            'temperature': '{:.1f}°C',
-            'visibility': '{:.1f} km',
-            'humidity': '{:.0f}%',
-            'wind_speed': '{:.1f} m/s'
-        }), use_container_width=True)
+        st.dataframe(input_df, use_container_width=True)
 
 elif predict_clicked and not model_loaded:
-    st.error("Model files not found. Please check that `model.pkl` and `scaler.pkl` are in the same directory.")
-
-# ─── Footer ───────────────────────────────────────────────────────────────────
-st.markdown("""
-<div style="text-align:center; margin-top:2.5rem; padding:1.2rem;
-     border-top:1px solid rgba(255,255,255,0.08); color:#6b6890; font-size:0.85rem;">
-    Built with ❤️ by <span style="color:#ffd200; font-weight:600;">Tejes Raju Ingole</span>
-</div>
-""", unsafe_allow_html=True)
+    st.error("Model files not found. Please check that model.pkl and scaler.pkl are in the same directory.")
 
 # ─── Feature Guide ────────────────────────────────────────────────────────────
 with st.expander("📖 Feature Reference Guide"):
@@ -296,3 +279,11 @@ with st.expander("📖 Feature Reference Guide"):
     | **Wind Speed** | m/s | weak positive effect |
     """)
     st.markdown("**Model:** XGBoost Regressor (tuned) — R² ≈ 0.90 | MAE ≈ 1600 J | RMSE ≈ 3300 J")
+
+# ─── Footer ───────────────────────────────────────────────────────────────────
+st.markdown("""
+<div style="text-align:center; margin-top:2.5rem; padding:1.2rem;
+     border-top:1px solid rgba(255,255,255,0.08); color:#6b6890; font-size:0.85rem;">
+    Built with ❤️ by <span style="color:#ffd200; font-weight:600;">Tejes Raju Ingole</span>
+</div>
+""", unsafe_allow_html=True)
